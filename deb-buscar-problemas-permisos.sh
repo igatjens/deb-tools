@@ -4,6 +4,9 @@ IFS='
 '
 
 REGISTRO=""
+CARPETA_REPORTES=$HOME/deb-reporte-problemas/
+FECHA_REPORTE=$(date +%Y-%m-%d_%H.%M.%S)
+ARCHIVO_REPORTE="${CARPETA_REPORTES}${FECHA_REPORTE}.txt"
 
 analizar_deb () {
 	
@@ -56,6 +59,7 @@ analizar_deb () {
 
 
 	if [[ $PROBLEMAS == true ]]; then
+		echo "${ETIQUETAS}${ARCHIVO}" >> "$ARCHIVO_REPORTE"
 		REGISTRO=$(echo -e "${REGISTRO}\n${ETIQUETAS}${ARCHIVO}")
 	fi
 
@@ -75,6 +79,8 @@ buscar_deb () {
 }
 
 
+mkdir -p "$CARPETA_REPORTES"
+
 for i in "$@"; do
 	if [[ -f "$i" ]]; then
 
@@ -92,11 +98,10 @@ REGISTRO=$(echo "$REGISTRO" | sed "1d")
 
 echo -e "\n--------------------------------------"
 echo Resultados
-echo -e "$REGISTRO" | sed "s|;|\t|g"
+echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
 echo -e "\n"
 echo R: Archivos o carpetas con proietario direfente a «root»
 echo E: Archivos o carpetas en que cualquiera puede escribir
 echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
-echo "$REGISTRO" > ~/deb-reporte-problemas.txt
 echo -e "\n"
-echo Reporte guardado en ~/deb-reporte-problemas.txt
+echo Reporte guardado en $ARCHIVO_REPORTE
