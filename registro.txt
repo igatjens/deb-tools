@@ -1,0 +1,26 @@
+R;E;-;/home/jaca/paquetes_deepines/peazip_7.4.2.LINUX.x86_64.GTK2.deb
+R;-;-;/home/jaca/paquetes_deepines/subidos/conkys-widgets_2.3_all.deb
+R;E;-;/home/jaca/paquetes_deepines/subidos/inkscape_1.0.1-4_amd64.deb
+R;-;-;/home/jaca/paquetes_deepines/subidos/deepines-store_1.3.3_amd64.deb
+R;-;-;/home/jaca/Desktop/deepines/3.1/Deepines-Repository-3.1_AMD64.DEB
+R;-;-;/home/jaca/dev/github/store_deepines/deb/archivo/deepines-store_1.3.2_amd64.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/archivo/deepines-store_1.3.2-test_amd64.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/archivo/deepines-store_1.3_amd64.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/archivo/deepines-store_1.3.1_amd64.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/deepines-store_1.3.3_amd64.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/temp/deepines-store_1.2.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/temp/deepines-store_1.3.deb
+R;-;-;/home/jaca/dev/github/store_deepines/deb/temp/Deepines-Repository-3.1_AMD64.DEB
+R;-;-;/home/jaca/dev/github/conkys-widgets/deb/conkys-widgets_2.3_all.deb
+-;E;-;/home/jaca/dev/github/conkys-widgets/deb/conkys-widgets_2.0_all.deb
+R;-;-;/home/jaca/dev/deepines-repository/deb/deepines-repository_4.0_amd64.deb
+R;-;-;/home/jaca/dev/deepines-repository/deb/temp/Deepines-Repository-3.1_AMD64.DEB
+R;-;-;/home/jaca/Downloads/Telegram Desktop/telegram-desktop_23.0_amd64.deb
+R;-;-;/home/jaca/Downloads/Telegram Desktop/telegram-desktop_24.0_amd64.deb
+R;-;-;/home/jaca/Downloads/Telegram Desktop/jdownloader_2.0.2_amd64.deb
+R;-;-;/home/jaca/.local/share/Trash/files/9ba54747d55c13c9e6353e8eb40d65e8.deb
+R;-;-;/home/jaca/.local/share/Trash/files/deepines-store_1.3.2_amd64.deb
+R;-;-;/home/jaca/.local/share/Trash/files/388908b4d171b1974aecc8f5b13895b9.deb
+R;-;-;/home/jaca/.local/share/Trash/files/telegram-desktop_24.0_amd64.deb
+R;-;-;/home/jaca/.local/share/Trash/files/deepines-repository_1_3.2-0deepin1_amd64.deb
+R;-;-;/home/jaca/.local/share/Trash/files/deepines-repository_3.1_rc1_amd64.deb
