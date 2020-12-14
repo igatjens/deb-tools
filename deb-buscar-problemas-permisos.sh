@@ -79,30 +79,38 @@ buscar_deb () {
 	return 0
 }
 
-mkdir -p "$CARPETA_TRABAJO"
-mkdir -p "$CARPETA_REPORTES"
+if [[ $@ ]]; then
 
-for i in "$@"; do
-	if [[ -f "$i" ]]; then
+	mkdir -p "$CARPETA_TRABAJO"
+	mkdir -p "$CARPETA_REPORTES"
 
-		analizar_deb "$i"
-	elif [[ -d "$i" ]]; then
-		
-		buscar_deb "$i"
-	else
-		echo $i no existe.
-	fi
-done
+	for i in "$@"; do
+		if [[ -f "$i" ]]; then
 
-#eliminar el salto de línea de la primera línea
-REGISTRO=$(echo "$REGISTRO" | sed "1d")
+			analizar_deb "$i"
+		elif [[ -d "$i" ]]; then
+			
+			buscar_deb "$i"
+		else
+			echo $i no existe.
+		fi
+	done
 
-echo -e "\n--------------------------------------"
-echo Problemas encontrados
-echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
-echo -e "\n"
-echo R: Archivos o carpetas con proietario direfente a «root»
-echo E: Archivos o carpetas en que cualquiera puede escribir
-echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
-echo -e "\n"
-echo Reporte guardado en $ARCHIVO_REPORTE
+	#eliminar el salto de línea de la primera línea
+	REGISTRO=$(echo "$REGISTRO" | sed "1d")
+
+	echo -e "\n--------------------------------------"
+	echo Problemas encontrados
+	echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
+	echo -e "\n"
+	echo R: Archivos o carpetas con proietario direfente a «root»
+	echo E: Archivos o carpetas en que cualquiera puede escribir
+	echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
+	echo -e "\n"
+	echo Reporte guardado en $ARCHIVO_REPORTE
+
+else
+	echo Debe especificar al menos un archivo o carpeta
+fi
+
+

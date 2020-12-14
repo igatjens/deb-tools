@@ -45,14 +45,21 @@ buscar_deb () {
 }
 
 
-for i in "$@"; do
-	if [[ -f "$i" ]]; then
+if [[ $@ ]]; then
 
-		corregir_nombre "$i"
-	elif [[ -d "$i" ]]; then
-		
-		buscar_deb "$i"
-	else
-		echo $i no existe.
-	fi
-done
+	for i in "$@"; do
+		if [[ -f "$i" ]]; then
+
+			corregir_nombre "$i"
+		elif [[ -d "$i" ]]; then
+			
+			buscar_deb "$i"
+		else
+			echo $i no existe.
+		fi
+	done
+else
+	echo Debe especificar al menos un archivo o carpeta
+fi
+
+	
