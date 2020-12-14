@@ -3,7 +3,7 @@
 IFS='
 '
 
-PARAMEPTRO=""
+PARAMETRO=""
 UBICACION=""
 MODO_INTERACTIVO=false
 
@@ -300,15 +300,15 @@ case $# in
 		UBICACION=$1
 		;;
 	2 )
-		PARAMEPTRO=$1
+		PARAMETRO=$1
 		UBICACION=$2
 
-		case $PARAMEPTRO in
+		case $PARAMETRO in
 			-i )
 				MODO_INTERACTIVO=true
 				;;
 			* )
-				echo El parápetro «$PARAMEPTRO» no es valido.
+				echo El parápetro «$PARAMETRO» no es valido.
 				exit 1
 				;;
 		esac
