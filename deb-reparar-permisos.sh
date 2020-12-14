@@ -125,7 +125,7 @@ analizar_deb () {
 	if [[ $LISTA_NO_ROOT ]]; then
 		PROPI_NO_ROOT=true
 		PROBLEMAS=true
-		echo R: Archivos o carpetas con proietario direfente a «root»
+		echo R: Archivos o carpetas con propietario diferente a «root»
 	fi
 
 
@@ -293,7 +293,7 @@ buscar_deb () {
 
 case $# in
 	0 )
-		echo No se encontraron parápetros, especifique un archivo .deb o una carpeta
+		echo No se encontraron parámetros, especifique un archivo .deb o una carpeta
 		exit 0
 		;;
 	1 )
@@ -308,7 +308,7 @@ case $# in
 				MODO_INTERACTIVO=true
 				;;
 			* )
-				echo El parápetro «$PARAMETRO» no es valido.
+				echo El parámetro «$PARAMETRO» no es valido.
 				exit 1
 				;;
 		esac

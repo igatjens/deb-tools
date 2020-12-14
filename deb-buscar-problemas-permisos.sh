@@ -103,7 +103,7 @@ if [[ $@ ]]; then
 	echo Problemas encontrados
 	echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
 	echo -e "\n"
-	echo R: Archivos o carpetas con proietario direfente a «root»
+	echo R: Archivos o carpetas con propietario diferente a «root»
 	echo E: Archivos o carpetas en que cualquiera puede escribir
 	echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
 	echo -e "\n"
