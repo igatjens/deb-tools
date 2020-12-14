@@ -3,10 +3,11 @@
 IFS='
 '
 
-REGISTRO=""
-CARPETA_REPORTES=$HOME/deb-reporte-problemas/
+CARPETA_TRABAJO="$HOME/deb-tools/"
+CARPETA_REPORTES="${CARPETA_TRABAJO}deb-reporte-problemas/"
 FECHA_REPORTE=$(date +%Y-%m-%d_%H.%M.%S)
 ARCHIVO_REPORTE="${CARPETA_REPORTES}${FECHA_REPORTE}.txt"
+REGISTRO=""
 
 analizar_deb () {
 	
@@ -22,13 +23,13 @@ analizar_deb () {
 
 	echo Analizando "$ARCHIVO"
 
-	COMPLEJO=false
-	PROPI_NO_ROOT=false
-	OTROS_ESCRIBIR=false
+	#COMPLEJO=false
+	#PROPI_NO_ROOT=false
+	#OTROS_ESCRIBIR=false
 	ETIQUETAS=""
 
 	LISTA=$(dpkg-deb --contents $ARCHIVO)
-	LASTA_COMPLEJO=$(echo "$LISTA" | grep -Ev " ./bin/| ./etc/| ./lib/| ./opt/| ./sbin/| ./usr/| ./tmp/| ./var/tmp/| ./$")
+	LiSTA_COMPLEJO=$(echo "$LISTA" | grep -Ev " ./bin/| ./etc/| ./lib/| ./opt/| ./sbin/| ./usr/| ./tmp/| ./var/tmp/| ./$")
 	LISTA_NO_ROOT=$(echo "$LISTA" | grep -Ev " root/root | 0/0 ")
 	LISTA_OTROS_ESCRITURA=$(echo "$LISTA" | grep -E "^(d|-).......w. " )
 
@@ -50,7 +51,7 @@ analizar_deb () {
 	fi
 
 
-	if [[ $LASTA_COMPLEJO ]]; then
+	if [[ $LiSTA_COMPLEJO ]]; then
 
 		ETIQUETAS="${ETIQUETAS}C;"
 	else
@@ -78,7 +79,7 @@ buscar_deb () {
 	return 0
 }
 
-
+mkdir -p "$CARPETA_TRABAJO"
 mkdir -p "$CARPETA_REPORTES"
 
 for i in "$@"; do
@@ -97,7 +98,7 @@ done
 REGISTRO=$(echo "$REGISTRO" | sed "1d")
 
 echo -e "\n--------------------------------------"
-echo Resultados
+echo Problemas encontrados
 echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
 echo -e "\n"
 echo R: Archivos o carpetas con proietario direfente a «root»
