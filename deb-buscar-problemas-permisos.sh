@@ -106,8 +106,13 @@ if [[ $@ ]]; then
 	echo R: Archivos o carpetas con propietario diferente a «root»
 	echo E: Archivos o carpetas en que cualquiera puede escribir
 	echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
-	echo -e "\n"
-	echo Reporte guardado en $ARCHIVO_REPORTE
+
+	if [[ -f "$ARCHIVO_REPORTE" ]]; then
+		
+		echo -e "\n"
+		echo Reporte guardado en $ARCHIVO_REPORTE
+	fi
+	
 
 else
 	echo Debe especificar al menos un archivo o carpeta
