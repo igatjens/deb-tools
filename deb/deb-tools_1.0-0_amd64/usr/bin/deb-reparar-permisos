@@ -77,7 +77,7 @@ reempaquetar () {
 		echo Quitando permisos de escritura a «otros» de los siguientes archivos
 
 		for i in $LISTA_QUITAR_ESCRITURA_OTROS; do
-			chmod o-w "${CARPETA_CONSTR}${i}"
+			chmod o-w "${CARPETA_CONSTR}""${i}"
 			echo "${i}"
 		done
 	fi
@@ -133,7 +133,7 @@ analizar_deb () {
 		
 		OTROS_ESCRIBIR=true
 		PROBLEMAS=true
-		LISTA_OTROS_ESCRITURA_SIMPLE="$(echo "$LISTA_OTROS_ESCRITURA" | tr -s [:blank:] | cut -d " " -f 6-20 | sed "s|^./||")"
+		LISTA_OTROS_ESCRITURA_SIMPLE="$(echo "$LISTA_OTROS_ESCRITURA" | tr -s [:blank:] | cut -d " " -f 6 | sed "s|^./||")"
 		echo E: Archivos o carpetas en que cualquiera puede escribir
 	fi
 
