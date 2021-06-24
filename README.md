@@ -5,7 +5,7 @@ Herramientas para crear, mantener, auditar y administrar archivos deb
 
 ## Buscar
 
-`./deb-buscar-problemas-permisos.sh archivo|carpeta`
+`deb-tools-permck archivo|carpeta`
 
 Puede especificar varios archivos y varias carpetas
 
@@ -13,7 +13,7 @@ Analiza archivos .deb en busca de problemas de permisos y genera un informe escr
 
 ## Reparar
 
-`./deb-reparar-permisos.sh [-i] archivo|carpeta`
+`deb-tools-permfix [-i] archivo|carpeta`
 
 -i Modo interactivo
 
@@ -21,7 +21,7 @@ Analiza archivos .deb en busca de problemas de permisos, corrige los problemas y
 
 ## Corregir nombre
 
-`./deb-corregir-nombre-archivo.sh archivo|carpeta`
+`deb-tools-namefix archivo|carpeta`
 
 Puede especificar varios archivos y varias carpetas.
 
