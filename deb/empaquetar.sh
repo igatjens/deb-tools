@@ -2,7 +2,7 @@
 
 
 NOMBRE_PAQUETE=deb-tools
-VERSION_PAQUETE=1.1-0
+VERSION_PAQUETE=1.2-0
 ARQUITECTURA_PAQUETE=amd64
 
 CARPETA_DE_TRABAJO=$NOMBRE_PAQUETE"_"$VERSION_PAQUETE"_"$ARQUITECTURA_PAQUETE
@@ -22,9 +22,7 @@ mkdir -p "$CARPETA_DE_TRABAJO/DEBIAN"
 
 echo Actualizando archivos
 
-cp -uv ../deb-buscar-problemas-permisos.sh "$CARPETA_DE_TRABAJO"/usr/bin/deb-buscar-problemas-permisos
-cp -uv ../deb-corregir-nombre-archivo.sh "$CARPETA_DE_TRABAJO"/usr/bin/deb-corregir-nombre-archivo
-cp -uv ../deb-reparar-permisos.sh "$CARPETA_DE_TRABAJO"/usr/bin/deb-reparar-permisos
+rsync -auvh --progress ../files/ "${CARPETA_DE_TRABAJO}/"
 
 
 
