@@ -2,7 +2,7 @@ Package: deb-tools
 Version: 1.2-0+deepines
 Architecture: amd64
 Installed-Size: 124
-Section: admin
+Section: devel
 Maintainer: Isaías Gätjens M <igatjens@gmail.com>
 Homepage: https://github.com/igatjens/deb-tools
 Priority: optional
