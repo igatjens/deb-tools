@@ -1,7 +1,0 @@
-04bd8d0484b42bf5790cd85a7abaee75  opt/apps/deb-tools/deb-tools-namefix.sh
-4cffc4cce8ba34744238d64712af2d73  opt/apps/deb-tools/deb-tools-permfix.sh
-22aaf150282cf030f29a99cf088ec38a  opt/apps/deb-tools/deb-tools-permck.sh
-b1724f2738ff7932685edd0632a1cb54  usr/share/icons/hicolor/scalable/apps/deb-tools.svg
-f8d098daf99abaef8c067dcf8d8cf501  usr/share/applications/deb-tools.desktop
-1ebbd3e34237af26da5dc08a4e440464  usr/share/doc/deb-tools/copyright
-5db96cadd48eb764b826b944accdd45b  usr/share/doc/deb-tools/changelog.gz
