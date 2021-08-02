@@ -1,65 +1,78 @@
-#! /bin/bash
+#!/bin/sh
 
-IFS='
-'
+Fmt='printf'
+set -f
+IFS="
+"
 
-corregir_nombre () {
+CURLANG="${LANGUAGE%%_*}" # Get locale.
 
-	ARCHIVO=$@
+NOT_A_DEB="Error: '%s' is not a valid .deb file."
+LOOKING_DEB="Looking for .deb files in '%s'..."
+DOESNT_EXIST="'%s' does not exist."
+MUST_SPECIFY="You must specify at least one file or folder."
 
-	#si no es un archivo .deb
-	if [[ $(echo $ARCHIVO | grep -Ev ".deb$|.DEB$") ]]; then
-		
-		echo Error: El archivo $ARCHIVO no es un .deb
+case "$CURLANG" in
+es)
+	NOT_A_DEB="Error: «%s» no es archivo .deb válido."
+	LOOKING_DEB="Buscando archivos .deb en «%s»..."
+	DOESNT_EXIST="«%s» no existe."
+	MUST_SPECIFY="Debe especificar al menos un archivo o carpeta."
+	;;
+esac
+
+FixName() {
+	FILE=$*
+
+	if ! dpkg-deb --info "$FILE" >/dev/null 2>&1; then # It is not a valid .deb file!
+		$Fmt >&2 "$NOT_A_DEB\n" "$FILE"
 		return 1
 	fi
 
-	INFO_PAQUETE=$(dpkg-deb -f "$ARCHIVO" package version architecture | cut -d " " -f2)
-	NOM_PAQUETE=$(echo $INFO_PAQUETE | cut -d " " -f1)
-	VER_PAQUETE=$(echo $INFO_PAQUETE | cut -d " " -f2)
-	ARQUI_PAQUETE=$(echo $INFO_PAQUETE | cut -d " " -f3)
+	INFO_PACKAGE=$(dpkg-deb -f "$FILE" package version architecture | cut -d " " -f2)
+	NAME_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f1)
+	VER_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f2)
+	ARCH_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f3)
 
-	NUEVO_NOMBRE="$(dirname "$ARCHIVO")/${NOM_PAQUETE}_${VER_PAQUETE}_${ARQUI_PAQUETE}.deb"
+	NEW_NAME="$(dirname "$FILE")/${NAME_PACKAGE}_${VER_PACKAGE}_${ARCH_PACKAGE}.deb"
 
-	if [[ "$ARCHIVO" != "$NUEVO_NOMBRE" ]]; then
-		mv "$ARCHIVO" "$NUEVO_NOMBRE"
+	if [ "$FILE" != "$NEW_NAME" ]; then
+		mv "$FILE" "$NEW_NAME"
 		echo -
-		echo "$ARCHIVO"
-		echo ↓
-	    echo "$NUEVO_NOMBRE"
-	    echo -
+		echo "$FILE"
+		echo "↓"
+		echo "$NEW_NAME"
+		echo -
 	fi
 }
 
+LocateDebs() {
+	$Fmt "$LOOKING_DEB\n" "$@"
+	LIST_FILES=$(find "$@" -type f -iname "*.deb")
 
-buscar_deb () {
-	echo Buscando archivos .deb en $@
-	LISTA_ARCHIVOS=$(find "$@" -type f -iname  "*.deb")
-
-	for i in $LISTA_ARCHIVOS; do
-		
-		corregir_nombre "$i"
+	for i in $LIST_FILES; do
+		FixName "$i"
 	done
 
 	return 0
 }
 
-
-if [[ $@ ]]; then
-
+if [ "$@" ]; then
 	for i in "$@"; do
-		if [[ -f "$i" ]]; then
-
-			corregir_nombre "$i"
-		elif [[ -d "$i" ]]; then
-			
-			buscar_deb "$i"
+		if [ -f "$i" ]; then
+			FixName "$i"
+		elif [ -d "$i" ]; then
+			LocateDebs "$i"
 		else
-			echo $i no existe.
+			$Fmt "$DOESNT_EXIST\n" "$i"
 		fi
 	done
 else
-	echo Debe especificar al menos un archivo o carpeta
+	echo >&2 "$MUST_SPECIFY"
+	exit 1
 fi
 
-	
+set +f
+unset IFS
+
+exit 0

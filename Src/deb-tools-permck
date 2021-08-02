@@ -1,117 +1,144 @@
-#! /bin/bash
+#!/bin/sh
 
-IFS='
-'
+Fmt='printf'
+set -f
+IFS="
+"
 
-CARPETA_TRABAJO="$HOME/deb-tools/"
-CARPETA_REPORTES="${CARPETA_TRABAJO}deb-reporte-problemas/"
-FECHA_REPORTE=$(date +%Y-%m-%d_%H.%M.%S)
-ARCHIVO_REPORTE="${CARPETA_REPORTES}${FECHA_REPORTE}.txt"
-REGISTRO=""
+CURLANG="${LANGUAGE%%_*}" # Get locale.
 
-analizar_deb () {
-	
-	ARCHIVO=$@
-	PROBLEMAS=false
+NOT_A_DEB="Error: '%s' is not a valid .deb file."
+FOUND_DEB="Analysing '%s'."
+LOOKING_DEB="Looking for .deb files in '%s'..."
+ISSUES_FOUND="Issues found:"
+DOESNT_EXIST="'%s' does not exist."
+NO_ROOT_TAG="R"
+WRITING_TAG="W"
+COMPLEX_TAG="C"
+ISSUE_R="R: Files or folders with an owner other than 'root'."
+ISSUE_W="W: Files or folders that can be written to by anyone."
+ISSUE_C="C: Package extracts files or folders to unusual locations."
+REPORT_SAVED="Report saved to '%s'."
+MUST_SPECIFY="You must specify at least one file or folder."
 
-	#si no es un archivo .deb
-	if [[ $(echo $ARCHIVO | grep -Ev ".deb$|.DEB$") ]]; then
-		
-		echo Error: El archivo $ARCHIVO no es un .deb
+case "$CURLANG" in
+es)
+	NOT_A_DEB="Error: «%s» no es archivo .deb válido."
+	FOUND_DEB="Analizando «%s»."
+	LOOKING_DEB="Buscando archivos .deb en «%s»..."
+	ISSUES_FOUND="Problemas encontrados:"
+	DOESNT_EXIST="«%s» no existe."
+	NO_ROOT_TAG="R"
+	WRITING_TAG="E"
+	COMPLEX_TAG="C"
+	ISSUE_R="R: Archivos o carpetas con un propietario distinto de «root»."
+	ISSUE_W="E: Archivos o carpetas en los que puede escribir cualquiera."
+	ISSUE_C="C: El paquete extrae archivos o carpetas a ubicaciones inusuales."
+	REPORT_SAVED="Informe guardado en «%s»."
+	MUST_SPECIFY="Debe especificar al menos un archivo o carpeta."
+	;;
+esac
+
+WORK_FOLDER="$HOME/deb-tools"
+REPORT_FOLDER="${WORK_FOLDER}/deb-issue-report"
+REPORT_DATE=$(date +%Y-%m-%d_%H.%M.%S)
+REPORT_FILE="${REPORT_FOLDER}/${REPORT_DATE}.log"
+LOGGING=""
+
+AnalyseDeb() {
+	FILE=$*
+	ISSUES=false
+
+	if ! dpkg-deb --info "$FILE" >/dev/null 2>&1; then # It is not a valid .deb file!
+		$Fmt >&2 "$NOT_A_DEB\n" "$FILE"
 		return 1
 	fi
 
-	echo Analizando "$ARCHIVO"
+	$Fmt "$FOUND_DEB\n" "$FILE"
 
-	#COMPLEJO=false
-	#PROPI_NO_ROOT=false
-	#OTROS_ESCRIBIR=false
-	ETIQUETAS=""
+	TAGS=""
 
-	LISTA=$(dpkg-deb --contents $ARCHIVO)
-	LiSTA_COMPLEJO=$(echo "$LISTA" | grep -Ev " ./bin/| ./etc/| ./lib/| ./opt/| ./sbin/| ./usr/| ./tmp/| ./var/tmp/| ./$")
-	LISTA_NO_ROOT=$(echo "$LISTA" | grep -Ev " root/root | 0/0 ")
-	LISTA_OTROS_ESCRITURA=$(echo "$LISTA" | grep -E "^(d|-).......w. " )
+	LIST=$(dpkg-deb --contents "$FILE")
+	LIST_COMPLEX=$(echo "$LIST" | grep -Ev " ./bin/| ./etc/| ./lib/| ./opt/| ./sbin/| ./usr/| ./tmp/| ./var/tmp/| ./$")
+	LIST_NO_ROOT=$(echo "$LIST" | grep -Ev " root/root | 0/0 ")
+	LIST_OTHERS_WRITING=$(echo "$LIST" | grep -E "^(d|-).......w. ")
 
-	if [[ $LISTA_NO_ROOT ]]; then
-
-		ETIQUETAS="R;"
-		PROBLEMAS=true
+	if [ "$LIST_NO_ROOT" ]; then
+		TAGS="$NO_ROOT_TAG;"
+		ISSUES=true
 	else
-		ETIQUETAS="-;"
+		TAGS="-;"
 	fi
 
-
-	if [[ $LISTA_OTROS_ESCRITURA ]]; then
-		
-		ETIQUETAS="${ETIQUETAS}E;"
-		PROBLEMAS=true
+	if [ "$LIST_OTHERS_WRITING" ]; then
+		TAGS="${TAGS}$WRITING_TAG;"
+		ISSUES=true
 	else
-		ETIQUETAS="${ETIQUETAS}-;"
+		TAGS="${TAGS}-;"
 	fi
 
-
-	if [[ $LiSTA_COMPLEJO ]]; then
-
-		ETIQUETAS="${ETIQUETAS}C;"
+	if [ "$LIST_COMPLEX" ]; then
+		TAGS="${TAGS}$COMPLEX_TAG;"
 	else
-		ETIQUETAS="${ETIQUETAS}-;"
+		TAGS="${TAGS}-;"
 	fi
 
-
-	if [[ $PROBLEMAS == true ]]; then
-		echo "${ETIQUETAS}${ARCHIVO}" >> "$ARCHIVO_REPORTE"
-		REGISTRO=$(echo -e "${REGISTRO}\n${ETIQUETAS}${ARCHIVO}")
+	if [ $ISSUES = true ]; then
+		echo "${TAGS}${FILE}" >>"$REPORT_FILE"
+		LOGGING=$($Fmt "${LOGGING}\n${TAGS}${FILE}")
 	fi
 
 	return 0
 }
 
-buscar_deb () {
-	echo Buscando archivos .deb en $@
-	LISTA_ARCHIVOS=$(find "$@" -type f -iname  "*.deb")
+LocateDebs() {
+	$Fmt "$LOOKING_DEB\n" "$@"
+	LIST_FILES=$(find "$@" -type f -iname "*.deb")
 
-	for i in $LISTA_ARCHIVOS; do
-		
-		analizar_deb "$i"
+	for i in $LIST_FILES; do
+		AnalyseDeb "$i"
 	done
 
 	return 0
 }
 
-if [[ $@ ]]; then
-
-	mkdir -p "$CARPETA_TRABAJO"
-	mkdir -p "$CARPETA_REPORTES"
+if [ "$@" ]; then
+	mkdir -p "$WORK_FOLDER"
+	mkdir -p "$REPORT_FOLDER"
 
 	for i in "$@"; do
-		if [[ -f "$i" ]]; then
-
-			analizar_deb "$i"
-		elif [[ -d "$i" ]]; then
-			
-			buscar_deb "$i"
+		if [ -f "$i" ]; then
+			AnalyseDeb "$i"
+		elif [ -d "$i" ]; then
+			LocateDebs "$i"
 		else
-			echo $i no existe.
+			$Fmt "$DOESNT_EXIST\n" "$i"
 		fi
 	done
 
-	#eliminar el salto de línea de la primera línea
-	REGISTRO=$(echo "$REGISTRO" | sed "1d")
+	# Remove the line break from the first line.
+	LOGGING=$(echo "$LOGGING" | sed "1d")
 
-	echo -e "\n--------------------------------------"
-	echo Problemas encontrados
-	echo -e "$REGISTRO" | sed -e "s|^| |; s|;|  |g" 
-	echo -e "\n"
-	echo R: Archivos o carpetas con propietario diferente a «root»
-	echo E: Archivos o carpetas en que cualquiera puede escribir
-	echo C: El paquete extrae archivos o carpetas en ubicaciones inusuales
+	echo
+	$Fmt -- '─%.0s' $(seq "$(tput cols)")
+	echo
+	echo "$ISSUES_FOUND"
+	$Fmt "$LOGGING" | sed -e "s|^| |; s|;|  |g"
+	$Fmt "\n\n"
+	echo "$ISSUE_R"
+	echo "$ISSUE_W"
+	echo "$ISSUE_C"
 
-	if [[ -f "$ARCHIVO_REPORTE" ]]; then
-		
-		echo -e "\n"
-		echo Reporte guardado en $ARCHIVO_REPORTE
+	if [ -f "$REPORT_FILE" ]; then
+		$Fmt "\n"
+		$Fmt "$REPORT_SAVED\n" "$REPORT_FILE"
 	fi
 else
-	echo Debe especificar al menos un archivo o carpeta
+	echo >&2 "$MUST_SPECIFY"
+	exit 1
 fi
+
+set +f
+unset IFS
+
+exit 0
