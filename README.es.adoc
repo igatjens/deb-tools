@@ -9,7 +9,7 @@
 :url-release: {url-repository}/releases/latest
 :url-licence: {url-repository}/blob/master/LICENSE
 :url-shields: https://img.shields.io/github
-:img-version-badge: {url-shields}/release/{project-repository}.svg?label=Versión
+:img-version-badge: {url-shields}/release/{project-repository}.svg?label=Versi%C3%B3n
 :img-licence-badge: {url-shields}/license/{project-repository}.svg?label=Licencia
 
 = {project-name}
