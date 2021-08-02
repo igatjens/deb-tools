@@ -1,131 +1,116 @@
-#!/bin/bash
-
-
-NOMBRE_PAQUETE=deb-tools
-VERSION_PAQUETE=1.2-0
-ARQUITECTURA_PAQUETE=amd64
-
-CARPETA_DE_TRABAJO=$NOMBRE_PAQUETE"_"$VERSION_PAQUETE"_"$ARQUITECTURA_PAQUETE
-
-echo Nombre: $NOMBRE_PAQUETE
-echo Versión: $VERSION_PAQUETE
-echo Arquitectura: $ARQUITECTURA_PAQUETE
-echo Nombre del paquete .deb: $CARPETA_DE_TRABAJO
-echo ""
-
-# Crear carpeta si no exite
-mkdir -p "$CARPETA_DE_TRABAJO"
-mkdir -p "$CARPETA_DE_TRABAJO/DEBIAN"
-
-#echo Habilitar perimos de edición
-#sudo chown -R $(whoami):$(whoami) $CARPETA_DE_TRABAJO/*
-
-echo Actualizando archivos
-
-rsync -auvh --progress ../files/ "${CARPETA_DE_TRABAJO}/"
-
-
-
-echo Actualizar registro de cambios
-RESPUESTA=""
-
-echo "Abortar = Ctrl+C"
-read $RESPUESTA
-
-
-# Anotar registro de cambios
-mkdir -p "$CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/"
-gunzip $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog.gz
-dedit $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog
-gzip -9 $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog
-
-
-#echo Eliminar espacios de los nombres de los archivos
-#RESPUESTA=""
-
-#echo "Abortar = Ctrl+C"
-#read $RESPUESTA
-
-
-# Suma de verificación
-#/deb/$CARPETA_DE_TRABAJO/DEBIAN/md5sums
-
-# Eliminar espacios de los nombres de los archivos
-#./elininar-espacios-nombres.sh
-
-
-
-echo Crear md5sums
-RESPUESTA=""
-
-echo "Abortar = Ctrl+C"
-read $RESPUESTA
-
-
-
-# limpiar archivo
-
-cd $CARPETA_DE_TRABAJO
-
-cat /dev/null > DEBIAN/md5sums
-
-
-LISTA=$(ls)
-
-for i in $LISTA; do
-
-	# Si no es de la carpeta ./DEBIAN
-	if [[ $(echo $i | grep -v -E "^DEBIAN") ]]; then
-		echo $i
-		find $i -type f -name  "*" -exec md5sum {} \; >> DEBIAN/md5sums
-	fi
+#!/bin/sh
+unset VER MANUAL
+while getopts ":v::m" OPTION >/dev/null 2>&1; do
+	case $OPTION in
+	v) VER=$OPTARG ;;
+	m) MANUAL=true ;;
+	:) echo >&2 "Option '-$OPTARG' requires a version to be specified." && exit 1 ;;
+	\?) echo >&2 "Unknown option: '$OPTARG'." && echo "Usage: ${0##*/} [-v 'version'] [-m]" && exit 1 ;;
+	esac
 done
+if [ -z "$VER" ]; then
+	echo >&2 "The '-v' option is mandatory and requires a version to be specified." && exit 1
+fi
 
+Cleanup() { rm -R "$TEMP_DIR" >/dev/null 2>&1 && exit; }
+trap "Cleanup" INT
 
-cd ..
+PKG_NAME=deb-tools
+PKG_VER=$VER+deepines
+PKG_DEV="Isaías Gätjens M <igatjens@gmail.com>"
+PKG_ARCH=all
+PKG_FULL_NAME=${PKG_NAME}_${PKG_VER}_${PKG_ARCH}
+SH_DIR="$(pwd -P)"
+TEMP_DIR="$(mktemp -d)"
+WORK_DIR="$TEMP_DIR/$PKG_FULL_NAME"
 
+echo "Welcome to '$PKG_NAME' packaging assistant!" && sleep 1
+echo "This script will help you in the packaging process." && sleep 1
+echo "Press Ctrl+C at any time to cancel the process.
 
+Packaging details:
+Name: $PKG_NAME
+Version: $PKG_VER
+Architecture: $PKG_ARCH
+Final package name: $PKG_FULL_NAME.deb
+"
+printf "%s" 'Starting in ' && i=5 && while [ $i -gt 0 ]; do
+	printf "%u... " "$i" && i=$((i - 1)) && sleep 1
+done && printf "%s\n" 'Now!'
 
-cd $CARPETA_DE_TRABAJO
+echo
+mkdir -p "$WORK_DIR/DEBIAN"
+cd "$WORK_DIR" || exit 1
 
-SIZE_INSTALADO=$( expr $(du --max-depth=1 | grep -E "(DEBIAN|\.$)" | sed "s|$| |; s|\t| |g" | tr -d "\n" | tr -s [:blank:] | cut -d " " -f1,3 | sed "s|^|-|; s| | + |") )
+Open() { # Create file (if needed), open and wait to finish...
+	if [ "$MANUAL" = true ]; then
+		touch "$1" >/dev/null 2>&1
+		echo "Manually checking '$1'..."
+		mimeopen -n "$1" >/dev/null 2>&1
+	fi
+}
 
-echo Tamaño instalado: $SIZE_INSTALADO
+echo "Copying scripts..."
+mkdir -p usr/bin
+cp -a "$SH_DIR/Src/." usr/bin
 
-cd ..
+DOC_PATH="usr/share/doc/$PKG_NAME"
+echo "Copying docs..."
+mkdir -p $DOC_PATH
+cp -a "$SH_DIR/Data/Doc/." $DOC_PATH
 
+MAN_PATH="usr/share/man/man1"
+echo "Copying manual pages..."
+mkdir -p $MAN_PATH
+cp -a "$SH_DIR/Data/ManPage/." $MAN_PATH
+gzip -r9n "$MAN_PATH/."
 
+echo "Updating changelog..."
+CLOG="$DOC_PATH/changelog.Debian"
+gunzip "$CLOG.gz"
+Open "$CLOG" # (-m) Manually update the changelog file.
+# Use dch (devscripts package) if available.
+gzip -9n "$CLOG"
 
-echo Revisar scripts del .deb
-RESPUESTA=""
+# Generate md5sums
+find . -not \( -path ./DEBIAN -prune \) -type f -exec md5sum {} \; |
+	sed "s|\./||" >DEBIAN/md5sums
 
-echo "Abortar = Ctrl+C"
-read $RESPUESTA
+# Generate 'Installed-Size' variable.
+INSIZE=$(du -s --exclude='DEBIAN/*' | grep -Eo "[0-9]*")
+Open "./DEBIAN/" # (-m) Manually update preinst, postinst, etc.
 
+# TODO: Maybe change the section back to "admin" when the new store is available.
+GenerateControl() {
+	cat <<EOF
+Package: $PKG_NAME
+Version: $PKG_VER
+Architecture: $PKG_ARCH
+Installed-Size: $INSIZE
+Section: devel
+Maintainer: $PKG_DEV
+Homepage: https://github.com/igatjens/deb-tools
+Priority: optional
+Pre-Depends: dpkg (>= 1.5)
+Depends: dpkg (>= 1.5), sed (>=4.5), grep (>=3.1), fakeroot (>=1.20), coreutils (>=8.20)
+Description: Packaging tools
+ Tools to create, maintain, audit and manage .deb files.
+EOF
+}
 
-#Actualizar preinst postinst etc
-#/deb/$CARPETA_DE_TRABAJO/DEBIAN/
-dde-file-manager $CARPETA_DE_TRABAJO/DEBIAN/
+echo "Generating control file..."
+GenerateControl >DEBIAN/control
+Open "./DEBIAN/control" # (-m) Manually update the control file.
 
+echo "Fixing permissions..."                     # For lintian mainly.
+find . -type d -exec chmod 755 {} \;             # Set all directory permissions to 755 (non-standard-dir-perm).
+find . -executable -type f -exec chmod 755 {} \; # Set all executable files permissions to 755 (non-standard-executable-perm).
+find usr/share -type f -exec chmod 644 {} \;     # Set all usr/share file permissions to 644 (non-standard-file-perm).
 
-echo Editar control
-RESPUESTA=""
+echo "Build package..."
+fakeroot dpkg-deb --build "$WORK_DIR" "$SH_DIR" # Should use "dpkg-buildpackage -rfakeroot" instead, but no.
 
-echo "Abortar = Ctrl+C"
-read $RESPUESTA
+#echo "Updating changes made to docs and changelog..."
 
-
-#Actualizar control
-#/deb/$CARPETA_DE_TRABAJO/DEBIAN/control
-dedit $CARPETA_DE_TRABAJO/DEBIAN/control
-
-
-echo Generar paquete
-RESPUESTA=""
-
-echo "Abortar = Ctrl+C"
-read $RESPUESTA
-
-fakeroot sh -c \
-"chown -R root:root $CARPETA_DE_TRABAJO/*;\
-dpkg-deb --build $CARPETA_DE_TRABAJO;"
+echo "Finished!"
+Cleanup
