@@ -18,8 +18,8 @@ ifdef::env-github[]
 [subs=attributes+]
 ++++
 <div align="center">
-   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" style='width:30%;' border="0"></a>
-   <div><small>Icons made by <a href="https://www.flaticon.com/authors/nikita-golubev" title="Nikita Golubev">Nikita Golubev</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></small></div>
+   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" width="256" height="256"></a>
+   <div><small>Icon made by <a href="https://www.flaticon.com/authors/nikita-golubev" title="Nikita Golubev">Nikita Golubev</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></small></div>
    <h1>{project-name}</h1>
    <h3>{project-description}</h3>
    <br />
