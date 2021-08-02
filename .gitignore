@@ -1,2 +1,3 @@
-#Archivos .deb
-*.deb
+.DS_Store
+.vscode
+*.[Dd][Ee][Bb]
