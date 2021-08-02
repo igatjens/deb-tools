@@ -1,0 +1,78 @@
+:project-name: deb-tools
+:project-description: Tools for creating, maintaining, auditing and managing Debian packages
+:project-repository: igatjens/{project-name}
+:!showtitle:
+:icons: font
+:toc: preamble
+:!toc-title:
+:url-repository: https://github.com/{project-repository}
+:url-shields: https://img.shields.io/github
+:img-version-badge: {url-shields}/release/{project-repository}.svg?label=Version
+:img-licence-badge: {url-shields}/license/{project-repository}.svg?label=Licence
+
+= {project-name}
+
+ifdef::env-github[]
+[subs=attributes+]
+++++
+<div align="center">
+   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" /></a>
+   <h1>{project-name}</h1>
+   <h3>{project-description}</h3>
+   <br />
+</div>
+<p align="center">
+  <a href="{url-release}">
+    <img src="{img-version-badge}">
+  </a>
+   <a href="{url-licence}">
+    <img src="{img-licence-badge}">
+  </a>
+</p>
+++++
+endif::[]
+
+ifndef::env-github[]
+image::./Data/Image/deb-tools.svg[{project-name}, align=center, link="{url-repository}"]
+
+[.text-center]
+[small]_Icon made by https://www.flaticon.com/authors/nikita-golubev[Nikita
+Golubev] from https://www.flaticon.com/[Flaticon]_
+
+[.text-center]
+[.lead]
+*{doctitle}*
+
+[.text-center]
+{project-description}
+
+[.text-center]
+image:{img-version-badge}[Version, align=center, link="{url-release}"]
+image:{img-licence-badge}[Licence, align=center, link="{url-licence}"]
+endif::[]
+
+== Usage
+
+=== Search
+
+`deb-tools-permck [file|folder]`
+
+You can specify multiple files and folders.
+
+Analyses .deb files for permissions issues and generates
+a report in `~/deb-tools/deb-issue-report`.
+
+=== Repair
+
+`deb-tools-permfix [-i interactive mode] [file|folder]`
+
+Analyses .deb files for permissions issues, fixes them,
+and generates a new .deb file in `~/deb-tools/repackaged`.
+
+=== Fix names
+
+`deb-tools-namefix [file|folder]`
+
+You can specify multiple files and folders.
+
+Fixes the name to `package_version_architecture.deb` format.

@@ -1,0 +1,79 @@
+:project-name: deb-tools
+:project-description: Herramientas para crear, mantener, auditar y gestionar paquetes Debian
+:project-repository: igatjens/{project-name}
+:!showtitle:
+:icons: font
+:toc: preamble
+:!toc-title:
+:url-repository: https://github.com/{project-repository}
+:url-shields: https://img.shields.io/github
+:img-version-badge: {url-shields}/release/{project-repository}.svg?label=Versión
+:img-licence-badge: {url-shields}/license/{project-repository}.svg?label=Licencia
+
+= {project-name}
+
+ifdef::env-github[]
+[subs=attributes+]
+++++
+<div align="center">
+   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" /></a>
+   <h1>{project-name}</h1>
+   <h3>{project-description}</h3>
+   <br />
+</div>
+<p align="center">
+  <a href="{url-release}">
+    <img src="{img-version-badge}">
+  </a>
+   <a href="{url-licence}">
+    <img src="{img-licence-badge}">
+  </a>
+</p>
+++++
+endif::[]
+
+ifndef::env-github[]
+image::./Data/Image/deb-tools.svg[{project-name}, align=center, link="{url-repository}"]
+
+[.text-center]
+[small]_Icono diseñado por
+https://www.flaticon.es/autores/nikita-golubev[Nikita Golubev] de
+https://www.flaticon.es/[Flaticon]_
+
+[.text-center]
+[.lead]
+*{doctitle}*
+
+[.text-center]
+{project-description}
+
+[.text-center]
+image:{img-version-badge}[Versión, align=center, link="{url-release}"]
+image:{img-licence-badge}[Licencia, align=center, link="{url-licence}"]
+endif::[]
+
+== Modo de uso
+
+=== Buscar
+
+`deb-tools-permck [archivo|carpeta]`
+
+Puede especificar varios archivos y carpetas.
+
+Analiza archivos _deb_ en busca de problemas de permisos y genera un
+informe escrito en `~/deb-tools/deb-issue-report`.
+
+=== Reparar
+
+`deb-tools-permfix [-i modo interactivo] [archivo|carpeta]`
+
+Analiza archivos _deb_ en busca de problemas de permisos, los corrige
+y genera un nuevo archivo _deb_ en `~/deb-tools/repackaged`.
+
+=== Corregir nombres
+
+`deb-tools-namefix [archivo|carpeta]`
+
+Puede especificar varios archivos y carpetas.
+
+Corrige el nombre al formato `paquete_versión_arquitectura.deb`.
