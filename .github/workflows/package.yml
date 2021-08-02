@@ -1,0 +1,93 @@
+name: "CI: Package"
+on: [push, pull_request]
+jobs:
+  build:
+    name: Package deb-tools
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        platform:
+          - # Debian 10 amd64
+            image: debian:buster
+            distro-id: "debian"
+            distro-ver: "10"
+    container: ${{ matrix.platform.image }}
+    steps:
+      - name: Checkout repository and submodules
+        id: checkout_repo
+        uses: actions/checkout@v1
+        with:
+          submodules: recursive
+      - name: Get version from release or latest tag
+        id: get_ver
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          COMMIT: ${{ github.event.commits[0].message }}
+        run: |
+          if echo "$COMMIT" | grep -q "Release v"; then
+              VER=${COMMIT#*Release v}
+              VER=${VER%% *}
+          else
+              apt -y update
+              apt -y install git
+              VER=$(git describe --tags --abbrev=0)
+              VER=${VER#*v}
+          fi
+          echo "::set-output name=app_ver::$VER"
+      - name: Install dependencies
+        id: install_deps
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt -y update
+          apt -y install fakeroot
+      - name: Build Debian package
+        id: build_deb
+        env:
+          APP_VER: ${{ steps.get_ver.outputs.app_ver }}
+        run: |
+          chmod +x PackageDebTools.sh
+          ./PackageDebTools.sh -v $APP_VER
+          echo "::set-output name=pkg_full_name::$(ls *.deb)"
+      - name: Install and run Lintian
+        run: |
+          apt -y install lintian
+          lintian *.deb
+      - name: Get variables
+        id: get
+        if: github.event_name == 'push' && startsWith(github.event.commits[0].message, 'Release v')
+        run: |
+          echo "::set-output name=pkg_ver::$(dpkg --info *.deb | sed -n -e 's/^.*Version: //p' | cut -f1 -d"+")"
+          echo "::set-output name=pkg_name::$(dpkg --info *.deb | sed -n -e 's/^.*Package: //p')"
+          echo "::set-output name=pkg_arch::$(dpkg --info *.deb | sed -n -e 's/^.*Architecture: //p')"
+      - name: Create release
+        id: create_rel
+        if: github.event_name == 'push' && startsWith(github.event.commits[0].message, 'Release v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get.outputs.pkg_ver }}
+          release_name: v${{ steps.get.outputs.pkg_ver }}
+          draft: false
+          prerelease: false
+      - name: Upload release
+        id: upload_rel
+        if: github.event_name == 'push' && startsWith(github.event.commits[0].message, 'Release v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          PACKAGE_VERSION: ${{ steps.get.outputs.pkg_ver }}
+          PACKAGE_ARCH: ${{ steps.get.outputs.pkg_arch }}
+        run: |
+          apt -y install curl
+          curl -Ls https://gist.github.com/xoascf/525b58c632818bfaf705f373ce6be8a5/raw/68e041d0de9592c7a730b2fe715288223b08c43b/upload-github-asset.sh | sh -s \
+          $OWNER \
+          $REPOSITORY_NAME \
+          $PACKAGE_VERSION \
+          $GITHUB_TOKEN \
+          ${{ steps.build_deb.outputs.pkg_full_name }}.deb \
+          ${{ steps.get.outputs.pkg_name }}_$PACKAGE_VERSION_$PACKAGE_ARCH.deb
+          application/vnd.debian.binary-package
