@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-NOMBRE_PAQUETE=jdownloader
-VERSION_PAQUETE=2.0.1
+NOMBRE_PAQUETE=deb-tools
+VERSION_PAQUETE=1.2-0
 ARQUITECTURA_PAQUETE=amd64
 
 CARPETA_DE_TRABAJO=$NOMBRE_PAQUETE"_"$VERSION_PAQUETE"_"$ARQUITECTURA_PAQUETE
@@ -14,10 +14,15 @@ echo Nombre del paquete .deb: $CARPETA_DE_TRABAJO
 echo ""
 
 # Crear carpeta si no exite
-mkdir -p $CARPETA_DE_TRABAJO
+mkdir -p "$CARPETA_DE_TRABAJO"
+mkdir -p "$CARPETA_DE_TRABAJO/DEBIAN"
 
-echo Habilitar perimos de edición
-sudo chown -R $(whoami):$(whoami) $CARPETA_DE_TRABAJO/*
+#echo Habilitar perimos de edición
+#sudo chown -R $(whoami):$(whoami) $CARPETA_DE_TRABAJO/*
+
+echo Actualizando archivos
+
+rsync -auvh --progress ../files/ "${CARPETA_DE_TRABAJO}/"
 
 
 
@@ -29,6 +34,7 @@ read $RESPUESTA
 
 
 # Anotar registro de cambios
+mkdir -p "$CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/"
 gunzip $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog.gz
 dedit $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog
 gzip -9 $CARPETA_DE_TRABAJO/usr/share/doc/$NOMBRE_PAQUETE/changelog
@@ -114,16 +120,12 @@ read $RESPUESTA
 dedit $CARPETA_DE_TRABAJO/DEBIAN/control
 
 
-echo Ajustar permisos de los archivos de la tienda
-sudo chown -R root:root $CARPETA_DE_TRABAJO/*
-
-
 echo Generar paquete
 RESPUESTA=""
 
 echo "Abortar = Ctrl+C"
 read $RESPUESTA
 
-
-
-dpkg-deb --build $CARPETA_DE_TRABAJO
+fakeroot sh -c \
+"chown -R root:root $CARPETA_DE_TRABAJO/*;\
+dpkg-deb --build $CARPETA_DE_TRABAJO;"
