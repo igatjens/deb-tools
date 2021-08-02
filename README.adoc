@@ -6,6 +6,8 @@
 :toc: preamble
 :!toc-title:
 :url-repository: https://github.com/{project-repository}
+:url-release: {url-repository}/releases/latest
+:url-licence: {url-repository}/blob/master/LICENSE
 :url-shields: https://img.shields.io/github
 :img-version-badge: {url-shields}/release/{project-repository}.svg?label=Version
 :img-licence-badge: {url-shields}/license/{project-repository}.svg?label=Licence
@@ -16,7 +18,8 @@ ifdef::env-github[]
 [subs=attributes+]
 ++++
 <div align="center">
-   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" /></a>
+   <a href="{url-repository}"> <img src="./Data/Image/deb-tools.svg" style='width:30%;' border="0"></a>
+   <div><small>Icons made by <a href="https://www.flaticon.com/authors/nikita-golubev" title="Nikita Golubev">Nikita Golubev</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></small></div>
    <h1>{project-name}</h1>
    <h3>{project-description}</h3>
    <br />
