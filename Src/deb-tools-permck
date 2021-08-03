@@ -85,7 +85,8 @@ AnalyseDeb() {
 
 	if [ $ISSUES = true ]; then
 		echo "${TAGS}${FILE}" >>"$REPORT_FILE"
-		LOGGING=$($Fmt "${LOGGING}\n${TAGS}${FILE}")
+		SPACED_TAGS=$(echo "$TAGS" | sed -e "s|^| |; s|;|  |g")
+		LOGGING=$($Fmt "${LOGGING}\n${SPACED_TAGS}${FILE}")
 	fi
 
 	return 0
@@ -123,7 +124,7 @@ if [ "$@" ]; then
 	$Fmt -- '─%.0s' $(seq "$(tput cols)")
 	echo
 	echo "$ISSUES_FOUND"
-	$Fmt "%s" "$LOGGING" | sed -e "s|^| |; s|;|  |g"
+	$Fmt "%s" "$LOGGING"
 	$Fmt "\n\n"
 	echo "$ISSUE_R"
 	echo "$ISSUE_W"
