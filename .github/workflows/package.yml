@@ -78,6 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY_NAME: ${{ github.event.repository.name }}
           OWNER: ${{ github.event.repository.owner.login }}
+          PACKAGE_NAME: ${{ steps.get.outputs.pkg_name }}
           PACKAGE_VERSION: ${{ steps.get.outputs.pkg_ver }}
           PACKAGE_ARCH: ${{ steps.get.outputs.pkg_arch }}
         run: |
@@ -88,5 +89,5 @@ jobs:
           v$PACKAGE_VERSION \
           $GITHUB_TOKEN \
           ${{ steps.build_deb.outputs.pkg_full_name }} \
-          ${{ steps.get.outputs.pkg_name }}_$PACKAGE_VERSION_$PACKAGE_ARCH.deb \
+          ${PACKAGE_NAME}_${PACKAGE_VERSION}_${PACKAGE_ARCH}.deb \
           application/vnd.debian.binary-package
