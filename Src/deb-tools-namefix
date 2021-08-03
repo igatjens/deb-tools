@@ -30,9 +30,12 @@ FixName() {
 	fi
 
 	INFO_PACKAGE=$(dpkg-deb -f "$FILE" package version architecture | cut -d " " -f2)
-	NAME_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f1)
-	VER_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f2)
-	ARCH_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f3)
+	# shellcheck disable=SC2086
+	NAME_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f1)
+	# shellcheck disable=SC2086
+	VER_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f2)
+	# shellcheck disable=SC2086
+	ARCH_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f3)
 
 	NEW_NAME="$(dirname "$FILE")/${NAME_PACKAGE}_${VER_PACKAGE}_${ARCH_PACKAGE}.deb"
 
