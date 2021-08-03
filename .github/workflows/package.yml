@@ -10,8 +10,6 @@ jobs:
         platform:
           - # Debian 10 amd64
             image: debian:buster
-            distro-id: "debian"
-            distro-ver: "10"
     container: ${{ matrix.platform.image }}
     steps:
       - name: Checkout repository and submodules
@@ -48,11 +46,14 @@ jobs:
           APP_VER: ${{ steps.get_ver.outputs.app_ver }}
         run: |
           chmod +x PackageDebTools.sh
-          ./PackageDebTools.sh -v $APP_VER
+          ./PackageDebTools.sh -v$APP_VER -a
           echo "::set-output name=pkg_full_name::$(ls *.deb)"
-      - name: Install and run Lintian
+      - name: Install Lintian
         run: |
+          apt -y update
           apt -y install lintian
+      - name: Run Lintian as non-root user
+        run: |
           lintian *.deb
       - name: Get variables
         id: get

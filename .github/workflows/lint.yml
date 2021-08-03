@@ -1,0 +1,20 @@
+name: "CI: Lint"
+on: [push, pull_request]
+jobs:
+  lint:
+    name: Run ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository and submodules
+        id: checkout_repo
+        uses: actions/checkout@v1
+        with:
+          submodules: recursive
+      - name: Get ShellCheck
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt -y update
+          sudo apt -y install shellcheck
+      - name: Analyse scripts with ShellCheck
+        run: shellcheck Src/*

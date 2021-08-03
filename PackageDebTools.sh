@@ -1,46 +1,62 @@
 #!/bin/sh
-unset VER MANUAL
-while getopts ":v::m" OPTION >/dev/null 2>&1; do
-	case $OPTION in
-	v) VER=$OPTARG ;;
-	m) MANUAL=true ;;
-	:) echo >&2 "Option '-$OPTARG' requires a version to be specified." && exit 1 ;;
-	\?) echo >&2 "Unknown option: '$OPTARG'." && echo "Usage: ${0##*/} [-v 'version'] [-m]" && exit 1 ;;
-	esac
-done
-if [ -z "$VER" ]; then
-	echo >&2 "The '-v' option is mandatory and requires a version to be specified." && exit 1
-fi
+
+Main() {
+	unset VER MANUAL AUTO
+	while getopts ":v:ma" OPTION >/dev/null 2>&1; do
+		case $OPTION in
+		v) VER=$OPTARG ;;
+		m) MANUAL=true ;;
+		a) AUTO=true ;;
+		:) echo >&2 "Option '$OPTARG' requires a version to be specified." && exit 1 ;;
+		*) echo >&2 "Unknown option: '$OPTARG'." && echo "Usage: ${0##*/} [-v 'version'] [-m] [-a]" && exit 1 ;;
+		esac
+	done
+	if [ -z "$VER" ]; then
+		echo >&2 "The '-v' option is mandatory and requires a version to be specified." && exit 1
+	fi
+	SetVariables
+	if [ "$AUTO" = true ]; then
+		echo "Starting automatic mode."
+		ShowDetails
+	else
+		Welcome
+	fi
+}
 
 Cleanup() { rm -R "$TEMP_DIR" >/dev/null 2>&1 && exit; }
 trap "Cleanup" INT
 
-PKG_NAME=deb-tools
-PKG_VER=$VER+deepines
-PKG_DEV="Isaías Gätjens M <igatjens@gmail.com>"
-PKG_ARCH=all
-PKG_FULL_NAME=${PKG_NAME}_${PKG_VER}_${PKG_ARCH}
-SH_DIR="$(pwd -P)"
-TEMP_DIR="$(mktemp -d)"
-WORK_DIR="$TEMP_DIR/$PKG_FULL_NAME"
+SetVariables() {
+	PKG_NAME=deb-tools
+	PKG_VER=$VER+deepines
+	PKG_DEV="Isaías Gätjens M <igatjens@gmail.com>"
+	PKG_ARCH=all
+	PKG_FULL_NAME=${PKG_NAME}_${PKG_VER}_${PKG_ARCH}
+	SH_DIR="$(pwd -P)"
+	TEMP_DIR="$(mktemp -d)"
+	WORK_DIR="$TEMP_DIR/$PKG_FULL_NAME"
+}
 
-echo "Welcome to '$PKG_NAME' packaging assistant!" && sleep 1
-echo "This script will help you in the packaging process." && sleep 1
-echo "Press Ctrl+C at any time to cancel the process.
-
-Packaging details:
+ShowDetails() {
+	echo "Packaging details:
 Name: $PKG_NAME
 Version: $PKG_VER
 Architecture: $PKG_ARCH
 Final package name: $PKG_FULL_NAME.deb
 "
-printf "%s" 'Starting in ' && i=5 && while [ $i -gt 0 ]; do
-	printf "%u... " "$i" && i=$((i - 1)) && sleep 1
-done && printf "%s\n" 'Now!'
+}
 
-echo
-mkdir -p "$WORK_DIR/DEBIAN"
-cd "$WORK_DIR" || exit 1
+Welcome() {
+	echo "Welcome to '$PKG_NAME' packaging assistant!" && sleep 1
+	echo "This script will help you in the packaging process." && sleep 1
+	echo "Press Ctrl+C at any time to cancel the process."
+	echo
+	ShowDetails
+	printf "%s" 'Starting in ' && i=5 && while [ $i -gt 0 ]; do
+		printf "%u... " "$i" && i=$((i - 1)) && sleep 1
+	done && printf "%s\n" 'Now!'
+	echo
+}
 
 Open() { # Create file (if needed), open and wait to finish...
 	if [ "$MANUAL" = true ]; then
@@ -49,6 +65,11 @@ Open() { # Create file (if needed), open and wait to finish...
 		mimeopen -n "$1" >/dev/null 2>&1
 	fi
 }
+
+Main "$@"
+
+mkdir -p "$WORK_DIR/DEBIAN"
+cd "$WORK_DIR" || exit 1
 
 echo "Copying scripts..."
 mkdir -p usr/bin
@@ -69,7 +90,7 @@ echo "Updating changelog..."
 CLOG="$DOC_PATH/changelog.Debian"
 gunzip "$CLOG.gz"
 Open "$CLOG" # (-m) Manually update the changelog file.
-# Use dch (devscripts package) if available.
+# TODO: Use dch (devscripts package) if available.
 gzip -9n "$CLOG"
 
 # Generate md5sums
@@ -109,8 +130,6 @@ find usr/share -type f -exec chmod 644 {} \;     # Set all usr/share file permis
 
 echo "Build package..."
 fakeroot dpkg-deb --build "$WORK_DIR" "$SH_DIR" # Should use "dpkg-buildpackage -rfakeroot" instead, but no.
-
-#echo "Updating changes made to docs and changelog..."
 
 echo "Finished!"
 Cleanup
