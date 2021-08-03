@@ -88,5 +88,5 @@ jobs:
           v$PACKAGE_VERSION \
           $GITHUB_TOKEN \
           ${{ steps.build_deb.outputs.pkg_full_name }} \
-          ${{ steps.get.outputs.pkg_name }}_$PACKAGE_VERSION_$PACKAGE_ARCH.deb
+          ${{ steps.get.outputs.pkg_name }}_$PACKAGE_VERSION_$PACKAGE_ARCH.deb \
           application/vnd.debian.binary-package
