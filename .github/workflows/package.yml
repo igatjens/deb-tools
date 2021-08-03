@@ -85,7 +85,7 @@ jobs:
           curl -Ls https://gist.github.com/xoascf/525b58c632818bfaf705f373ce6be8a5/raw/68e041d0de9592c7a730b2fe715288223b08c43b/upload-github-asset.sh | sh -s \
           $OWNER \
           $REPOSITORY_NAME \
-          $PACKAGE_VERSION \
+          v$PACKAGE_VERSION \
           $GITHUB_TOKEN \
           ${{ steps.build_deb.outputs.pkg_full_name }}.deb \
           ${{ steps.get.outputs.pkg_name }}_$PACKAGE_VERSION_$PACKAGE_ARCH.deb
