@@ -123,7 +123,7 @@ if [ "$@" ]; then
 	$Fmt -- '─%.0s' $(seq "$(tput cols)")
 	echo
 	echo "$ISSUES_FOUND"
-	$Fmt "$LOGGING" | sed -e "s|^| |; s|;|  |g"
+	$Fmt "%s" "$LOGGING" | sed -e "s|^| |; s|;|  |g"
 	$Fmt "\n\n"
 	echo "$ISSUE_R"
 	echo "$ISSUE_W"
