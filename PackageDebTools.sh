@@ -127,6 +127,7 @@ echo "Fixing permissions..."                     # For lintian mainly.
 find . -type d -exec chmod 755 {} \;             # Set all directory permissions to 755 (non-standard-dir-perm).
 find . -executable -type f -exec chmod 755 {} \; # Set all executable files permissions to 755 (non-standard-executable-perm).
 find usr/share -type f -exec chmod 644 {} \;     # Set all usr/share file permissions to 644 (non-standard-file-perm).
+find usr/bin -type f -exec chmod +x {} \;        # Mark each script as executable
 
 echo "Build package..."
 fakeroot dpkg-deb --build "$WORK_DIR" "$SH_DIR" # Should use "dpkg-buildpackage -rfakeroot" instead, but no.
