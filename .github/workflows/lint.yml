@@ -17,4 +17,4 @@ jobs:
           sudo apt -y update
           sudo apt -y install shellcheck
       - name: Analyse scripts with ShellCheck
-        run: shellcheck Src/*
+        run: shellcheck Src/* -e SC1091 -e SC2086

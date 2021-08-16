@@ -5,18 +5,38 @@ set -f
 IFS="
 "
 
-CURLANG="${LANGUAGE%%_*}" # Get locale.
+NOT_A_DEB='Error: “%s” is not a valid .deb file.'
+FOUND_DEB='Analysing “%s”.'
+LOOKING_DEB='Looking for .deb files in “%s”...'
+DOESNT_EXIST='“%s” does not exist.'
+ISSUE_R='R: Files or folders with an owner other than “root”.'
+ISSUE_W='W: Files or folders that can be written to by anyone.'
+ISSUE_C='C: Package extracts files or folders to unusual locations.'
+YESEXPR='[yY]*'
+NDEF='[y/N]'
+STARTING_RPKG='Starting repackaging...'
+DELETING_FOLDER='Deleting folder “%s”...'
+CREATING_FOLDER='Creating folder “%s”...'
+EXTRACTING_PKG='Extracting package “%s”...'
+REMOVING_OW='Removing “others” write permissions from the following files:'
+FR_START='Starting repackaging with fakeroot...'
+FR_TO_ROOT='Setting owner and group “root” to “%s”...'
+FR_FINISH='Repacking with fakeroot finished.'
+END_RPKG_NAME='Repackaged: “%s”.'
+END_RPKG_PATH='Path of the new package: “%s”.'
+WANT_CONTINUE_RPKG='Do you want to continue with the repackaging process?'
+WANT_SEE_FILES='Do you want to see them?'
+WANT_REMOVE_OW='Do you want to remove “others” write permissions from those files?'
+FOUND_NO_ROOT='Files with owner and group other than “root” were found.'
+FOUND_OW='Files that allow “others” to write to them were found.'
+FOUND_COMPLEX='Files that are extracted in unusual locations were found.'
+MUST_SPECIFY='You must specify at least one file or folder.'
+NO_ISSUES_FOUND='No permissions issues were found.'
+NO_ARGS='No arguments were provided.'
+INVALID_ARG='“%s” is not a valid argument.'
 
-NOT_A_DEB="Error: '%s' is not a valid .deb file."
-FOUND_DEB="Analysing '%s'."
-LOOKING_DEB="Looking for .deb files in '%s'..."
-DOESNT_EXIST="'%s' does not exist."
-ISSUE_R="R: Files or folders with an owner other than 'root'."
-ISSUE_W="W: Files or folders that can be written to by anyone."
-ISSUE_C="C: Package extracts files or folders to unusual locations."
-
-case "$CURLANG" in
-es)
+case "${LANGUAGE:-$LANG}" in
+es*)
 	NOT_A_DEB="Error: «%s» no es archivo .deb válido."
 	FOUND_DEB="Analizando «%s»."
 	LOOKING_DEB="Buscando archivos .deb en «%s»..."
@@ -24,59 +44,76 @@ es)
 	ISSUE_R="R: Archivos o carpetas con un propietario distinto de «root»."
 	ISSUE_W="E: Archivos o carpetas en los que puede escribir cualquiera."
 	ISSUE_C="C: El paquete extrae archivos o carpetas a ubicaciones inusuales."
+	YESEXPR="[sSyY]*"
+	NDEF="[s/N]"
+	STARTING_RPKG="Iniciando reempaquetado..."
+	DELETING_FOLDER="Borrando carpeta «%s»..."
+	CREATING_FOLDER="Creando carpeta «%s»..."
+	EXTRACTING_PKG="Extrayendo paquete «%s»..."
+	REMOVING_OW="Quitando permisos de escritura a «otros» de los siguientes archivos:"
+	FR_START="Iniciando reempaquetado con fakeroot..."
+	FR_TO_ROOT="Estableciendo propietario y grupo «root» a «%s»..."
+	FR_FINISH="Reempaquetado con fakeroot terminado."
+	END_RPKG_NAME="Se ha reempaquetado: «%s»."
+	END_RPKG_PATH="Ruta del nuevo paquete: «%s»."
+	WANT_CONTINUE_RPKG="¿Desea continuar con el proceso de reempaquetado?"
+	WANT_SEE_FILES="¿Desea verlos?"
+	WANT_REMOVE_OW="¿Desea quitar los permisos de escritura a «otros» de esos archivos?"
+	FOUND_NO_ROOT="Se encontraron archivos con propietario y grupo distintos a «root»."
+	FOUND_OW="Se encontraron archivos que permiten que «otros» escriban en ellos."
+	FOUND_COMPLEX="Se encontraron archivos que se extraen en ubicaciones inusuales."
+	MUST_SPECIFY="Debe especificar al menos un archivo o carpeta."
+	NO_ISSUES_FOUND="No se encontraron problemas de permisos."
+	NO_ARGS="No se proporcionó ningún argumento."
+	INVALID_ARG="«%s» no es un argumento válido."
 	;;
 esac
 
-PARAMETRO=""
+ARGUMENT=""
 LOCATION=""
 INTERACTIVE_MODE=false
 
+DrawLine() {
+	echo
+	$Fmt '─%.s' $(seq "$(stty size | cut -d" " -f2)")
+	echo
+}
+
+AnsweredYesTo() { # Xoas' Get Answer Function.
+	$Fmt "%s " "$1 $NDEF"
+	eval "case '$(head -n1)' in
+    ($YESEXPR) return 0 ;; # Yes.
+    (*) return 1 ;; esac   # No."
+}
+
 WantToContinue() {
-	KEYBOARD=""
 	CONTINUE=true
 	while [ $CONTINUE = true ]; do
-		echo
-		$Fmt -- '─%.0s' $(seq "$(tput cols)")
-		echo
-		$Fmt "¿Desea continuar con el proceso de reempaquetado\? (s/N)"
-		read -r KEYBOARD
-
-		if [ "$KEYBOARD" = "" ]; then
-			KEYBOARD="N"
-		fi
-
-		case $KEYBOARD in
-		S | s)
-			CONTINUE=false
-			;;
-		N | n)
-			CONTINUE=false
+		DrawLine
+		if ! AnsweredYesTo "$WANT_CONTINUE_RPKG"; then
 			exit 0
-			;;
-		*)
-			echo Respuesta incorrecta
-			;;
-		esac
+		fi
+		CONTINUE=false
 	done
 }
 
 Repackage() {
-	echo "Iniciando reempaquetado"
+	echo "$STARTING_RPKG"
 
 	WORK_FOLDER="$HOME/deb-tools"
 	REPACKED_FOLDER="${WORK_FOLDER}/repackaged"
 	PACKAGE="$1"
 
 	if [ ! "$PACKAGE" ]; then
-		$Fmt "$DOESNT_EXIST\n" "$PACKAGE"
+		$Fmt >&2 "$DOESNT_EXIST\n" "$PACKAGE"
 		return 1
 	fi
 
-	LIST_QUITAR_ESCRITURA_OTROS="$2"
-	INFO_PACKAGE=$(dpkg-deb -f "$PACKAGE" package version architecture | cut -d " " -f2)
-	NAME_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f1)
-	VER_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f2)
-	ARCH_PACKAGE=$(echo "$INFO_PACKAGE" | cut -d " " -f3)
+	LIST_REMOVE_OTHERS_WRITING="$2"
+	INFO_PACKAGE=$(dpkg-deb -f "$PACKAGE" package version architecture | cut -d" " -f2)
+	NAME_PACKAGE=$(echo $INFO_PACKAGE | cut -d" " -f1)
+	VER_PACKAGE=$(echo $INFO_PACKAGE | cut -d" " -f2)
+	ARCH_PACKAGE=$(echo $INFO_PACKAGE | cut -d" " -f3)
 
 	REPACKED="${NAME_PACKAGE}_${VER_PACKAGE}_${ARCH_PACKAGE}"
 	BUILD_FOLDER="${REPACKED_FOLDER}/${REPACKED}"
@@ -85,35 +122,36 @@ Repackage() {
 	mkdir -p "$REPACKED_FOLDER"
 
 	if [ -d "$BUILD_FOLDER" ]; then
-		echo "Borrando carpeta $BUILD_FOLDER"
+		$Fmt "$DELETING_FOLDER\n" "$BUILD_FOLDER"
 		rm -rf "$BUILD_FOLDER"
 	fi
 
-	echo "Creando $BUILD_FOLDER"
+	$Fmt "$CREATING_FOLDER\n" "$BUILD_FOLDER"
 	mkdir "$BUILD_FOLDER"
 
-	echo "Extrayendo paquete $PACKAGE"
+	$Fmt "$EXTRACTING_PKG\n" "$PACKAGE"
 	dpkg-deb -R "$PACKAGE" "$BUILD_FOLDER"
 
-	if [ "$LIST_QUITAR_ESCRITURA_OTROS" ]; then
-		echo "Quitando permisos de escritura a «otros» de los siguientes archivos"
-
-		for i in $LIST_QUITAR_ESCRITURA_OTROS; do
-			chmod o-w "${BUILD_FOLDER}${i}"
+	if [ "$LIST_REMOVE_OTHERS_WRITING" ]; then
+		echo "$REMOVING_OW"
+		for i in $LIST_REMOVE_OTHERS_WRITING; do
+			chmod o-w "${BUILD_FOLDER}/${i}"
 			echo "${i}"
 		done
 	fi
 
-	echo "Iniciando fakeroot"
-	fakeroot echo "Estableciendo propietario y grupo «root» a '$BUILD_FOLDER'..."
+	echo "$FR_START"
+	$Fmt "$FR_TO_ROOT\n" "$BUILD_FOLDER"
 	fakeroot chown -R root:root "$BUILD_FOLDER"
 	fakeroot dpkg-deb --build "$BUILD_FOLDER" "$REPACKED_FOLDER"
-	echo "fakeroot terminado"
+	echo "$FR_FINISH"
 
-	echo "Borrando $BUILD_FOLDER"
+	$Fmt "$DELETING_FOLDER\n" "$BUILD_FOLDER"
 	rm -rf "$BUILD_FOLDER"
 
-	echo "Reempaquetado $REPACKED en $REPACKED_FOLDER/$REPACKED.deb"
+	REPACKED_PATH="$REPACKED_FOLDER/$REPACKED.deb"
+	$Fmt "$END_RPKG_NAME\n" "$REPACKED"
+	$Fmt "$END_RPKG_PATH\n" "$REPACKED_PATH"
 }
 
 AnalyseDeb() {
@@ -125,14 +163,12 @@ AnalyseDeb() {
 		return 1
 	fi
 
-	echo
-	$Fmt -- '─%.0s' $(seq "$(tput cols)")
-	echo
+	DrawLine
 	$Fmt "$FOUND_DEB\n" "$FILE"
 	dpkg-deb -f "$FILE" package version architecture
 
 	COMPLEX=false
-	PROPS_NO_ROOT=false
+	OWNER_NO_ROOT=false
 	OTHERS_WRITING=false
 
 	LIST=$(dpkg-deb --contents "$FILE")
@@ -142,7 +178,7 @@ AnalyseDeb() {
 	LIST_OTHERS_WRITING_SIMPLE=""
 
 	if [ "$LIST_NO_ROOT" ]; then
-		PROPS_NO_ROOT=true
+		OWNER_NO_ROOT=true
 		ISSUES=true
 		echo "$ISSUE_R"
 	fi
@@ -150,7 +186,8 @@ AnalyseDeb() {
 	if [ "$LIST_OTHERS_WRITING" ]; then
 		OTHERS_WRITING=true
 		ISSUES=true
-		LIST_OTHERS_WRITING_SIMPLE="$(echo "$LIST_OTHERS_WRITING" | tr -s '[:blank:]' | cut -d " " -f 6-20 | sed "s|^./||")"
+		# FIXME: Replaces 2 or more spaces, cuts columns, and removes './' in path name. Do it properly!
+		LIST_OTHERS_WRITING_SIMPLE="$(echo "$LIST_OTHERS_WRITING" | tr -s '[:blank:]' | cut -d" " -f 6-20 | sed "s|^./||")"
 		echo "$ISSUE_W"
 	fi
 
@@ -161,123 +198,49 @@ AnalyseDeb() {
 
 	if [ $INTERACTIVE_MODE = true ]; then
 		if [ $COMPLEX = true ]; then
-			KEYBOARD=""
 			CONTINUE=true
 			while [ $CONTINUE = true ]; do
-				echo
-				$Fmt -- '─%.0s' $(seq "$(tput cols)")
-				echo
-				$Fmt "Se encontraron archivos que se extraen en ubicaciones inusuales"
-				$Fmt "¿Desea verlos\? (S/n)"
-				read -r KEYBOARD
-
-				if [ "$KEYBOARD" = "" ]; then
-					KEYBOARD="S"
-				fi
-
-				case $KEYBOARD in
-				S | s)
+				DrawLine
+				echo "$FOUND_COMPLEX"
+				if AnsweredYesTo "$WANT_SEE_FILES"; then
 					echo "$LIST_COMPLEX" | less
-					CONTINUE=false
-					;;
-				N | n)
-					CONTINUE=false
-					;;
-				*)
-					echo Respuesta incorrecta
-					;;
-				esac
+				fi
+				CONTINUE=false
 			done
 			WantToContinue
 		fi
 
-		if [ $PROPS_NO_ROOT = true ]; then
-			KEYBOARD=""
+		if [ $OWNER_NO_ROOT = true ]; then
 			CONTINUE=true
 			while [ $CONTINUE = true ]; do
-				echo
-				$Fmt -- '─%.0s' $(seq "$(tput cols)")
-				echo
-				$Fmt "Se encontraron archivos con propietario y grupo diferente a «root»"
-				$Fmt "¿Desea verlos\? (S/n)"
-				read -r KEYBOARD
-
-				if [ "$KEYBOARD" = "" ]; then
-					KEYBOARD="S"
-				fi
-
-				case $KEYBOARD in
-				S | s)
+				DrawLine
+				echo "$FOUND_NO_ROOT"
+				if AnsweredYesTo "$WANT_SEE_FILES"; then
 					echo "$LIST_NO_ROOT" | less
-					CONTINUE=false
-					;;
-				N | n)
-					CONTINUE=false
-					;;
-				*)
-					echo Respuesta incorrecta
-					;;
-				esac
+				fi
+				CONTINUE=false
 			done
 			WantToContinue
 		fi
 
 		if [ $OTHERS_WRITING = true ]; then
-			KEYBOARD=""
 			CONTINUE=true
 			while [ $CONTINUE = true ]; do
-				echo
-				$Fmt -- '─%.0s' $(seq "$(tput cols)")
-				echo
-				$Fmt "Se encontraron archivos que permiten que «otros» escriban en ellos"
-				$Fmt "¿Desea verlos\? (S/n)"
-				read -r KEYBOARD
-
-				if [ "$KEYBOARD" = "" ]; then
-					KEYBOARD="S"
-				fi
-
-				case $KEYBOARD in
-				S | s)
+				DrawLine
+				echo "$FOUND_OW"
+				if AnsweredYesTo "$WANT_SEE_FILES"; then
 					echo "$LIST_OTHERS_WRITING" | less
-					CONTINUE=false
-					;;
-				N | n)
-					CONTINUE=false
-					;;
-				*)
-					echo Respuesta incorrecta
-					;;
-				esac
+				fi
+				CONTINUE=false
 			done
 
-			KEYBOARD=""
 			CONTINUE=true
 			while [ $CONTINUE = true ]; do
-
-				echo
-				$Fmt -- '─%.0s' $(seq "$(tput cols)")
-				echo
-				$Fmt "¿Desea quiere quitar los permisos de escritura a «otros» de esos archivos\? (S/n)"
-				read -r KEYBOARD
-
-				if [ "$KEYBOARD" = "" ]; then
-					KEYBOARD="S"
+				DrawLine
+				if ! AnsweredYesTo "$WANT_REMOVE_OW"; then
+					LIST_OTHERS_WRITING_SIMPLE="" # Empty the file list.
 				fi
-
-				case $KEYBOARD in
-				S | s)
-					CONTINUE=false
-					;;
-				N | n)
-					# Vaciar la lista de archivos
-					LIST_OTHERS_WRITING_SIMPLE=""
-					CONTINUE=false
-					;;
-				*)
-					echo Respuesta incorrecta
-					;;
-				esac
+				CONTINUE=false
 			done
 			WantToContinue
 		fi
@@ -286,7 +249,7 @@ AnalyseDeb() {
 	if [ $ISSUES = true ]; then
 		Repackage "$FILE" "$LIST_OTHERS_WRITING_SIMPLE"
 	else
-		echo No se encontraron problemas de permisos
+		echo "$NO_ISSUES_FOUND"
 	fi
 
 	return 0
@@ -305,28 +268,29 @@ LocateDebs() {
 
 case $# in
 0)
-	echo No se encontraron parámetros, especifique un archivo .deb o una carpeta
-	exit 0
+	echo >&2 "$NO_ARGS"
+	echo >&2 "$MUST_SPECIFY"
+	exit 1
 	;;
 1)
 	LOCATION=$1
 	;;
 2)
-	PARAMETRO=$1
+	ARGUMENT=$1
 	LOCATION=$2
 
-	case $PARAMETRO in
+	case $ARGUMENT in
 	-i)
 		INTERACTIVE_MODE=true
 		;;
 	*)
-		echo "El parámetro «$PARAMETRO» no es válido."
+		$Fmt >&2 "$INVALID_ARG\n" "$ARGUMENT"
 		exit 1
 		;;
 	esac
 	;;
 *)
-	echo "Especifique sólo un archivo a la vez"
+	echo >&2 "$MUST_SPECIFY"
 	exit 1
 	;;
 esac
@@ -336,7 +300,8 @@ if [ -f "$LOCATION" ]; then
 elif [ -d "$LOCATION" ]; then
 	LocateDebs "$LOCATION"
 else
-	$Fmt "$DOESNT_EXIST\n" "$i"
+	$Fmt >&2 "$DOESNT_EXIST\n" "$LOCATION"
+	exit 1
 fi
 
 set +f

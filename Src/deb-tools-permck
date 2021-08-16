@@ -5,24 +5,22 @@ set -f
 IFS="
 "
 
-CURLANG="${LANGUAGE%%_*}" # Get locale.
+NOT_A_DEB='Error: “%s” is not a valid .deb file.'
+FOUND_DEB='Analysing “%s”.'
+LOOKING_DEB='Looking for .deb files in “%s”...'
+ISSUES_FOUND='Issues found:'
+DOESNT_EXIST='“%s” does not exist.'
+NO_ROOT_TAG='R'
+WRITING_TAG='W'
+COMPLEX_TAG='C'
+ISSUE_R='R: Files or folders with an owner other than “root”.'
+ISSUE_W='W: Files or folders that can be written to by anyone.'
+ISSUE_C='C: Package extracts files or folders to unusual locations.'
+REPORT_SAVED='Report saved to “%s”.'
+MUST_SPECIFY='You must specify at least one file or folder.'
 
-NOT_A_DEB="Error: '%s' is not a valid .deb file."
-FOUND_DEB="Analysing '%s'."
-LOOKING_DEB="Looking for .deb files in '%s'..."
-ISSUES_FOUND="Issues found:"
-DOESNT_EXIST="'%s' does not exist."
-NO_ROOT_TAG="R"
-WRITING_TAG="W"
-COMPLEX_TAG="C"
-ISSUE_R="R: Files or folders with an owner other than 'root'."
-ISSUE_W="W: Files or folders that can be written to by anyone."
-ISSUE_C="C: Package extracts files or folders to unusual locations."
-REPORT_SAVED="Report saved to '%s'."
-MUST_SPECIFY="You must specify at least one file or folder."
-
-case "$CURLANG" in
-es)
+case "${LANGUAGE:-$LANG}" in
+es*)
 	NOT_A_DEB="Error: «%s» no es archivo .deb válido."
 	FOUND_DEB="Analizando «%s»."
 	LOOKING_DEB="Buscando archivos .deb en «%s»..."
@@ -103,6 +101,12 @@ LocateDebs() {
 	return 0
 }
 
+DrawLine() {
+	echo
+	$Fmt '─%.s' $(seq "$(stty size | cut -d" " -f2)")
+	echo
+}
+
 if [ "$@" ]; then
 	mkdir -p "$WORK_FOLDER"
 	mkdir -p "$REPORT_FOLDER"
@@ -113,16 +117,14 @@ if [ "$@" ]; then
 		elif [ -d "$i" ]; then
 			LocateDebs "$i"
 		else
-			$Fmt "$DOESNT_EXIST\n" "$i"
+			$Fmt >&2 "$DOESNT_EXIST\n" "$i"
 		fi
 	done
 
 	# Remove the line break from the first line.
 	LOGGING=$(echo "$LOGGING" | sed "1d")
 
-	echo
-	$Fmt -- '─%.0s' $(seq "$(tput cols)")
-	echo
+	DrawLine
 	echo "$ISSUES_FOUND"
 	$Fmt "%s" "$LOGGING"
 	$Fmt "\n\n"

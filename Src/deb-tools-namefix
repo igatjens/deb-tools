@@ -5,15 +5,13 @@ set -f
 IFS="
 "
 
-CURLANG="${LANGUAGE%%_*}" # Get locale.
+NOT_A_DEB='Error: “%s” is not a valid .deb file.'
+LOOKING_DEB='Looking for .deb files in “%s”...'
+DOESNT_EXIST='“%s” does not exist.'
+MUST_SPECIFY='You must specify at least one file or folder.'
 
-NOT_A_DEB="Error: '%s' is not a valid .deb file."
-LOOKING_DEB="Looking for .deb files in '%s'..."
-DOESNT_EXIST="'%s' does not exist."
-MUST_SPECIFY="You must specify at least one file or folder."
-
-case "$CURLANG" in
-es)
+case "${LANGUAGE:-$LANG}" in
+es*)
 	NOT_A_DEB="Error: «%s» no es archivo .deb válido."
 	LOOKING_DEB="Buscando archivos .deb en «%s»..."
 	DOESNT_EXIST="«%s» no existe."
@@ -30,11 +28,8 @@ FixName() {
 	fi
 
 	INFO_PACKAGE=$(dpkg-deb -f "$FILE" package version architecture | cut -d " " -f2)
-	# shellcheck disable=SC2086
 	NAME_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f1)
-	# shellcheck disable=SC2086
 	VER_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f2)
-	# shellcheck disable=SC2086
 	ARCH_PACKAGE=$(echo $INFO_PACKAGE | cut -d " " -f3)
 
 	NEW_NAME="$(dirname "$FILE")/${NAME_PACKAGE}_${VER_PACKAGE}_${ARCH_PACKAGE}.deb"
@@ -67,7 +62,7 @@ if [ "$@" ]; then
 		elif [ -d "$i" ]; then
 			LocateDebs "$i"
 		else
-			$Fmt "$DOESNT_EXIST\n" "$i"
+			$Fmt >&2 "$DOESNT_EXIST\n" "$i"
 		fi
 	done
 else
